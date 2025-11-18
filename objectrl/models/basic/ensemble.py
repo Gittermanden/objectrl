@@ -49,7 +49,7 @@ class Ensemble[T: nn.Module](nn.Module, ABC):
         models: list[T],
         device: Literal["cpu", "cuda"] = "cpu",
         sequential: bool = False,
-        compile: bool = True,
+        compile: bool = False,
     ) -> None:
         """
         Initialize the ensemble
