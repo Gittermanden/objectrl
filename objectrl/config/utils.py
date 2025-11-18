@@ -344,8 +344,10 @@ def setup_config(
                 "Found no NVIDIA GPU available on this device. Rerun with '--system.device=cpu' to avoid this error."
             )
 
-    # Check for accessability of path
-    if not os.access(config.logging.result_path, os.W_OK):
+    # Check for accessibility of path
+    parent = os.path.dirname(os.path.abspath(config.logging.result_path)) or "."
+    can_access = os.path.isdir(parent) and os.access(parent, os.W_OK)
+    if not can_access:
         raise PermissionError(
             f"Cannot write to {config.logging.result_path}. Please run with '--logging.result_path=<path>' where <path> has write access."
         )
