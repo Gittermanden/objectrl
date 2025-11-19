@@ -16,10 +16,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------------
 
+import os
 import pprint
 import sys
 from pathlib import Path
 
+import torch
 import tyro
 
 from objectrl.config.config import MainConfig
@@ -34,6 +36,22 @@ from objectrl.config.utils import (
 from objectrl.experiments.control_experiment import ControlExperiment
 
 
+def set_reproducibility(seed: int) -> None:
+    """
+    Configure PyTorch and CUDA for reproducible experiments.
+
+    This function sets all relevant random seeds and enables deterministic
+    execution so that training runs can be reproduced as closely as possible.
+
+    Args:
+        seed (int): The base random seed to apply across CPU and GPU RNGs.
+    """
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    torch.use_deterministic_algorithms(True)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
 def main(config: MainConfig) -> None:
     """
     Main entry point to run the control experiment training.
@@ -45,6 +63,8 @@ def main(config: MainConfig) -> None:
     This function prints the config if verbose, creates a ControlExperiment
     instance, and starts training.
     """
+    set_reproducibility(config.seed)
+
     if config.verbose:
         pprint.pprint(config)
     exp = ControlExperiment(config)
