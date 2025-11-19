@@ -345,11 +345,17 @@ def setup_config(
             )
 
     # Check for accessibility of path
-    parent = os.path.dirname(os.path.abspath(config.logging.result_path)) or "."
-    can_access = os.path.isdir(parent) and os.access(parent, os.W_OK)
-    if not can_access:
+    result_path = os.path.abspath(config.logging.result_path)
+    if os.path.isdir(result_path):
+        if not os.access(result_path, os.W_OK):
+            raise PermissionError(
+                f"Cannot write to {config.logging.result_path}. Please run with '--logging.result_path=<path>' where <path> has write access."
+            )
+
+    parent = os.path.dirname(result_path)
+    if not (os.path.isdir(parent) and os.access(parent, os.W_OK)):
         raise PermissionError(
-            f"Cannot write to {config.logging.result_path}. Please run with '--logging.result_path=<path>' where <path> has write access."
+            f"Cannot create {config.logging.result_path}. Please run with '--logging.result_path=<parent/path>' where parent exists and has write access."
         )
     return config
 
