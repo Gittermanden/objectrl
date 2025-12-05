@@ -12,6 +12,15 @@ Functions
 Classes
 -------
 
+FeatureExtractor
+~~~~~~~~~~~~~~~~~
+.. autoclass:: objectrl.utils.net_utils.FeatureExtractor
+    :undoc-members:
+    :show-inheritance:
+    :private-members:
+    :members:
+    :exclude-members: _abc_impl
+
 MLP
 ~~~
 .. autoclass:: objectrl.utils.net_utils.MLP
@@ -35,6 +44,7 @@ Notes
 
 - The :code:`create_optimizer` function dynamically selects and configures an optimizer from **torch.optim**.
 - The :code:`create_loss` function supports both PyTorch and custom loss modules (e.g., from **objectrl.models.basic.loss**).
+- The :code:`FeatureExtractor` class creates a stack of layers with the pattern: `Linear` → (`LayerNorm`) → `Activation`
 - The :code:`MLP` class supports `ReLU` and `CReLU` activations and optional `LayerNorm`.
 - The :code:`BayesianMLP` supports multiple Bayesian linear layer types:
   

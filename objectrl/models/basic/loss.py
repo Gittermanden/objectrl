@@ -22,7 +22,10 @@ from abc import ABC, abstractmethod
 import torch
 from torch.nn.modules.loss import _Loss
 
+from objectrl.utils.utils import dim_check
+
 if typing.TYPE_CHECKING:
+    from objectrl.config.model_configs.dsac import DSACConfig
     from objectrl.config.model_configs.pbac import PBACConfig
 
 
@@ -128,3 +131,93 @@ class PACBayesLoss(ProbabilisticLoss):
 
         q_loss = empirical_risk + complexity
         return q_loss.sum()
+
+
+class DSACLoss(_Loss):
+    """
+    Distributional Soft Actor-Critic (DSAC) Loss Function.
+
+    Args:
+        config: Configuration object with loss parameters
+    Attributes:
+        _kappa (float): Huber loss threshold.
+    """
+
+    def __init__(self, config: "DSACConfig"):
+        super().__init__()
+        self._kappa = config.lossparams.kappa
+
+    @torch.compile
+    def vec_asymmetric_huber_loss_weighted(
+        self,
+        pred: torch.Tensor,
+        target: torch.Tensor,
+        tau: torch.Tensor,
+        weight: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Vectorized Asymmetric Huber Loss with weights.
+
+        Args:
+            pred (Tensor): Predicted quantiles: [n_member x n_batch x n_quantiles].
+            target (Tensor): Target quantiles: [n_member x n_batch x n_quantiles].
+            tau (Tensor): Quantile levels: [n_quantiles] or [n_batch x n_quantiles].
+            weight (Tensor): Weights for each quantile: [n_quantiles] or [n_batch x n_quantiles].
+        Returns:
+            Tensor: Computed loss tensor.
+        """
+        dim_check(pred, target)
+        pred = pred.unsqueeze(3)  # [... n_quantiles x 1]
+        target = target.unsqueeze(2)  # [... 1 x n_quantiles]
+
+        if len(tau.shape) == 1:
+            assert tau.shape[0] == pred.shape[2]
+            tau = tau.view(1, 1, tau.shape[0], 1)  # [1 x 1 x n_quantiles x 1]
+        elif len(tau.shape) == 2:  # In this case we have samples for every quantile
+            assert tau.shape[0] == pred.shape[1]
+
+            tau = tau.view(1, tau.shape[0], tau.shape[1], 1)
+
+        if len(weight.shape) == 1:
+            assert weight.shape[0] == pred.shape[2]
+            weight = weight.view(1, 1, 1, weight.shape[0])
+        elif len(weight.shape) == 2:  # In this case we have samples for every quantile
+            assert weight.shape[0] == pred.shape[1]
+            weight = weight.view(
+                1, weight.shape[0], 1, weight.shape[1]
+            )  # [1 x n_batch x 1 x n_quantiles]
+
+        u = target - pred  # [n_member x n_batch x n_quantiles x n_quantiles]
+        abs_u = torch.abs(u)
+        huber = torch.where(
+            abs_u <= self._kappa,
+            0.5 * u.pow(2),
+            self._kappa * (abs_u - 0.5 * self._kappa),
+        )
+        loss = (
+            (1.0 / u.shape[-1])
+            * (torch.abs(tau - (u < 0).float()) * huber / self._kappa)
+            * weight
+        )
+
+        return loss
+
+    def forward(
+        self,
+        pred: torch.Tensor,
+        target: torch.Tensor,
+        tau: torch.Tensor,
+        target_tau: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute the DSAC loss.
+
+        Args:
+            pred (Tensor): Predicted quantiles: [n_member x n_batch x n_quantiles].
+            target (Tensor): Target quantiles: [n_member x n_batch x n_quantiles].
+            tau (Tensor): Quantile levels: [n_quantiles] or [n_batch x n_quantiles].
+            target_tau (Tensor): Target quantile levels: [n_quantiles] or [n_batch x n_quantiles].
+        Returns:
+            Tensor: Computed loss tensor.
+        """
+        return self.vec_asymmetric_huber_loss_weighted(pred, target, tau, target_tau)

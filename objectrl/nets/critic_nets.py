@@ -18,10 +18,11 @@
 
 from typing import Literal
 
+import numpy as np
 import torch
 from torch import nn as nn
 
-from objectrl.utils.net_utils import MLP, BayesianMLP
+from objectrl.utils.net_utils import MLP, BayesianMLP, FeatureExtractor
 
 
 class CriticNet(nn.Module):
@@ -253,3 +254,76 @@ class DQNNet(nn.Module):
             x (Tensor): Concatenated observation and action tensor.
         """
         return self.arch(x)
+
+
+class QuantileCriticNet(nn.Module):
+    """
+    Quantile Critic Network for Distributional RL.
+    Estimates the quantile values for given state-action pairs.
+
+    Args:
+        dim_state (int): Dimension of observation space.
+        dim_act (int): Dimension of action space.
+        depth (int): Number of hidden layers.
+        width (int): Width of each hidden layer.
+        act (str): Activation function to use.
+        has_norm (bool): Whether to include normalization layers.
+    """
+
+    def __init__(
+        self,
+        dim_state: int,
+        dim_act: int,
+        depth: int,
+        width: int = 256,
+        act: Literal["relu", "crelu"] = "relu",
+        has_norm: bool = True,
+    ) -> None:
+        super().__init__()
+        self.embedding_dim = 128
+
+        self.base_arch = FeatureExtractor(
+            dim_in=dim_state + dim_act,
+            depth=1,
+            width=width,
+            act="relu",
+            has_norm=has_norm,
+        )
+        self.tau_arch = FeatureExtractor(
+            dim_in=self.embedding_dim,
+            depth=1,
+            width=width,
+            act="sigmoid",
+            has_norm=has_norm,
+        )
+        self.out_arch = MLP(
+            dim_in=width, dim_out=1, depth=2, width=width, act="relu", has_norm=has_norm
+        )
+        for i, layer in enumerate(self.out_arch.model):
+            if isinstance(layer, nn.LayerNorm):
+                self.out_arch.model[i] = nn.LayerNorm(width)
+
+        self.const_vec = torch.from_numpy(np.arange(1, self.embedding_dim + 1)).float()
+        self.const_vec = nn.Parameter(self.const_vec, requires_grad=False)
+
+    def forward(self, xtau: tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
+        """
+        Forward pass of the critic network.
+        Args:
+            xtau (tuple[Tensor, Tensor]): Tuple containing concatenated observation-action tensor and quantile fractions.
+        Returns:
+            Tensor: Estimated quantile values.
+        """
+        x, tau = xtau
+        sa_embedding = self.base_arch(x)  # [batch_size x width]
+
+        tau_embedding = torch.cos(
+            tau.unsqueeze(-1) * self.const_vec * np.pi
+        )  # [batch_size x n_samples x embedding_dim]
+        tau_embedding = self.tau_arch(tau_embedding)  # [batch_size x n_samples x width]
+
+        x = (
+            sa_embedding.unsqueeze(1) * tau_embedding
+        )  # [batch_size x n_samples x width]
+        q_values = self.out_arch(x).squeeze(-1)
+        return q_values

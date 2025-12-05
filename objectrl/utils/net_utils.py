@@ -84,6 +84,56 @@ def create_loss(config, reduction: str = "none") -> nn.Module:
             )
 
 
+class FeatureExtractor(nn.Module):
+    """
+    Generic shallow MLP for feature extraction.
+
+    Creates a stack of layers with the pattern:
+        Linear → (LayerNorm) → Activation
+
+    Args:
+        dim_in (int): Input feature dimension.
+        depth (int): Number of hidden layers (>= 1).
+        width (int): Width of hidden layers.
+        act (Literal["relu", "sigmoid"]): Activation function for all hidden layers.
+        has_norm (bool): Whether to include LayerNorm after each linear layer.
+    """
+
+    def __init__(
+        self,
+        dim_in: int,
+        depth: int,
+        width: int,
+        act: Literal["relu", "sigmoid"] = "relu",
+        has_norm: bool = True,
+    ):
+        super().__init__()
+        assert depth > 0, "Need at least one hidden layer"
+
+        if act == "relu":
+            self.activation_fn = nn.ReLU
+        elif act == "sigmoid":
+            self.activation_fn = nn.Sigmoid
+        else:
+            raise NotImplementedError(
+                f"{act} is not implemented. User should add other activation functions if needed."
+            )
+
+        layers = []
+        in_dim = dim_in
+        for _ in range(depth):
+            layers.append(nn.Linear(in_dim, width))
+            if has_norm:
+                layers.append(nn.LayerNorm(width, elementwise_affine=True))
+            layers.append(self.activation_fn())
+            in_dim = width
+
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x)
+
+
 class MLP(nn.Module):
     def __init__(
         self,
