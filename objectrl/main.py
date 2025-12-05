@@ -63,7 +63,7 @@ def main(config: MainConfig) -> None:
     This function prints the config if verbose, creates a ControlExperiment
     instance, and starts training.
     """
-    set_reproducibility(config.seed)
+    set_reproducibility(config.system.seed)
 
     if config.verbose:
         pprint.pprint(config)
