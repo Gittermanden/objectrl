@@ -18,11 +18,7 @@ Key features:
 Functions
 ---------
 
-.. autoclass:: objectrl.utils.environment.dmc_wrappers.DMCEnv
-    :undoc-members:
-    :show-inheritance:
-    :private-members:
-    :members:
+.. autofunction:: objectrl.utils.environment.dmc_wrappers.dmc_spec2gym_space
 
 Classes
 -------
