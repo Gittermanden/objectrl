@@ -208,15 +208,7 @@ class DDPGCritic(CriticEnsemble):
 class DeepDeterministicPolicyGradient(ActorCritic):
     """
     Full DDPG agent, combining actor and critic with target networks and experience replay.
-
-    Args:
-        config (MainConfig): Main configuration for training and environment.
-        critic_type (Type): Class to be used for the critic (default: DDPGCritic).
-        actor_type (Type): Class to be used for the actor (default: DDPGActor).
-    Attributes:
-        config (MainConfig): Configuration object.
-        actor (DDPGActor): Actor network for action selection.
-        critic (DDPGCritic): Critic network for Q-value estimation.
+    Lillicrap et al. (2015): Continuous Control with Deep Reinforcement Learning
     """
 
     _agent_name = "DDPG"
@@ -227,6 +219,16 @@ class DeepDeterministicPolicyGradient(ActorCritic):
         critic_type: type = DDPGCritic,
         actor_type: type = DDPGActor,
     ) -> None:
+        """
+        Initializes DDPG agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         super().__init__(config, critic_type, actor_type)
 
     def store_transition(self, transition: dict) -> None:

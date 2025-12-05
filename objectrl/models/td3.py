@@ -161,6 +161,7 @@ class TD3Critic(CriticEnsemble):
 class TwinDelayedDeepDeterministicPolicyGradient(ActorCritic):
     """
     TD3 agent combining delayed policy updates and clipped noise target smoothing.
+    Fujimoto et al. (2018): Addressing Function Approximation Error in Actor-Critic Methods
     """
 
     _agent_name = "TD3"
@@ -176,8 +177,8 @@ class TwinDelayedDeepDeterministicPolicyGradient(ActorCritic):
 
         Args:
             config (MainConfig): Configuration dataclass instance.
-            critic_type (type): Critic network class type.
-            actor_type (type): Actor network class type.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
         Returns:
             None
         """

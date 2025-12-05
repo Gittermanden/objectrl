@@ -201,18 +201,8 @@ class OACCritic(CriticEnsemble):
 
 class OptimisticActorCritic(ActorCritic):
     """
-    Main OAC agent class that integrates the OAC actor and critic.
-    Implements action selection with or without optimistic exploration.
-
-    Args:
-        config (MainConfig): Global training and model configuration.
-        critic_type (type): Class used for the critic ensemble (default OACCritic).
-        actor_type (type): Class used for the actor (default OACActor).
-    Attributes:
-        config (MainConfig): Configuration object.
-        actor (OACActor): Actor network for action selection.
-        critic (OACCritic): Critic network for Q-value estimation.
-        device (torch.device): Device for computation (CPU or GPU).
+    OAC agent class that integrates the OAC actor and critic.
+    Ciosek et al. (2019): Better Exploration with Optimistic Actor-Critic
     """
 
     _agent_name = "OAC"
@@ -222,7 +212,17 @@ class OptimisticActorCritic(ActorCritic):
         config: "MainConfig",
         critic_type: type = OACCritic,
         actor_type: type = OACActor,
-    ):
+    ) -> None:
+        """
+        Initializes the OAC agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         super().__init__(config, critic_type, actor_type)
 
     def select_action(

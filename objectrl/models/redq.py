@@ -78,12 +78,8 @@ class REDQCritic(SACCritic):
 # [start-redq-code]
 class RandomizedEnsembledDoubleQLearning(ActorCritic):
     """
-    REDQ agent implementation combining REDQCritic and SACActor.
-
-    Args:
-        config (MainConfig): Global configuration object.
-        critic_type (type): Type of critic to use, defaults to REDQCritic.
-        actor_type (type): Type of actor to use, defaults to SACActor.
+    REDQ agent combining REDQCritic and SACActor.
+    Chen et al. (2021): Randomized Ensembled Double Q-Learning: Learning Fast Without a Model
     """
 
     _agent_name = "REDQ"
@@ -94,6 +90,16 @@ class RandomizedEnsembledDoubleQLearning(ActorCritic):
         critic_type: type = REDQCritic,
         actor_type: type = SACActor,
     ) -> None:
+        """
+        Initializes the REDQ agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         super().__init__(config, critic_type, actor_type)
 
 

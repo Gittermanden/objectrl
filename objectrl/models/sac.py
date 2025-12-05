@@ -168,18 +168,7 @@ class SACCritic(CriticEnsemble):
 class SoftActorCritic(ActorCritic):
     """
     Soft Actor-Critic agent combining SACActor and SACCritic.
-
-    Args:
-        config (MainConfig): Configuration object containing model hyperparameters.
-        critic_type (type): Type of critic to use, defaults to SACCritic.
-        actor_type (type): Type of actor to use, defaults to SACActor.
-    Attributes:
-        config (MainConfig): Configuration object.
-        critic (SACCritic): Critic network for Q-value estimation.
-        actor (SACActor): Actor network for action selection.
-        device (torch.device): Device for computation (CPU or GPU).
-        iter (int): Iteration counter for training steps.
-        optim (torch.optim.Optimizer): Optimizer for the actor network.
+    Haarnoja et al. (2018): Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor
     """
 
     _agent_name = "SAC"

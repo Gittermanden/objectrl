@@ -222,13 +222,9 @@ class PBACCritic(CriticEnsemble):
 
 class PACBayesianAC(ActorCritic):
     """
-    Main PBAC agent class implementing PAC-Bayesian Actor-Critic logic.
+    PBAC agent class implementing PAC-Bayesian Actor-Critic logic.
     Combines the PBACActor and PBACCritic, manages training and interaction.
-
-    Args:
-        config (MainConfig): Configuration object.
-        critic_type (type): Critic class (default: PBACCritic).
-        actor_type (type): Actor class (default: PBACActor).
+    Tasdighi et al. (2025): Deep Exploration with PAC-Bayes
     """
 
     _agent_name = "PBAC"
@@ -239,6 +235,16 @@ class PACBayesianAC(ActorCritic):
         critic_type: type = PBACCritic,
         actor_type: type = PBACActor,
     ) -> None:
+        """
+        Initializes the PBAC agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         super().__init__(config, critic_type, actor_type)
 
     def store_transition(self, transition: dict) -> None:
