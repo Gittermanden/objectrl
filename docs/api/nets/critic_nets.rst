@@ -12,6 +12,7 @@ Descriptions
 - **BNNCriticNet**: A Bayesian Q-network using the local reparameterization trick.
 - **EMstyle**: An encoder network for expectation-maximization-style latent modeling.
 - **DQNNet**: A Q-network architecture designed for discrete action spaces (e.g., DQN).
+- **QuantileCriticNet**: A quantile regression-based critic network for distributional RL.
 
 Classes
 -------
@@ -52,6 +53,13 @@ Classes
     :exclude-members: _abc_impl
 
 .. autoclass:: objectrl.nets.critic_nets.DQNNet
+    :undoc-members:
+    :show-inheritance:
+    :private-members:
+    :members:
+    :exclude-members: _abc_impl
+
+.. autoclass:: objectrl.nets.critic_nets.QuantileCriticNet
     :undoc-members:
     :show-inheritance:
     :private-members:

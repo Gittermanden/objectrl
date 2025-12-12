@@ -45,6 +45,8 @@ Currently, the main algorithms supported include:
   See :doc:`OAC</api/models/oac>` page for details.
 - **PAC-Bayesian Actor-Critic (PBAC)**: An actor-critic algorithm that leverages PAC-Bayesian theory to improve exploration strategies.
   See :doc:`PBAC</api/models/pbac>` page for details.
+- **Distributional Soft Actor-Critic (DSAC)**: An extension of SAC that uses distributional critics for risk-sensitive reinforcement learning.
+  See :doc:`DSAC</api/models/dsac>` page for details.
 - **Bayesian Neural Network SAC (BNN-SAC)**: Extends SAC with Bayesian critics to quantify epistemic uncertainty (currently in examples).
   See :doc:`Example 3</examples/example_3>` page for details.
 - **Deep Q-Network (DQN)**: A classic value-based method primarily for discrete action spaces (currently in examples).

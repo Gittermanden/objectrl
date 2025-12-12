@@ -9,6 +9,8 @@ Included Losses:
 
 - :class:`PACBayesLoss`: Combines empirical risk with complexity regularization for PAC-Bayesian learning.
 
+- :class:`DSACLoss`: Distributional loss function for the DSAC algorithm.
+
 Extending
 ---------
 
@@ -32,6 +34,16 @@ PACBayesLoss
 ------------------
 
 .. autoclass:: objectrl.models.basic.loss.PACBayesLoss
+    :undoc-members:
+    :show-inheritance:
+    :private-members:
+    :members:
+    :exclude-members: _abc_impl
+
+DSACLoss
+------------------
+
+.. autoclass:: objectrl.models.basic.loss.DSACLoss
     :undoc-members:
     :show-inheritance:
     :private-members:
