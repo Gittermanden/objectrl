@@ -22,62 +22,10 @@ import torch
 
 from objectrl.models.basic.ac import ActorCritic
 from objectrl.models.basic.critic import CriticEnsemble
-from objectrl.models.basic.loss import ProbabilisticLoss
 from objectrl.models.sac import SACActor
 
 if typing.TYPE_CHECKING:
     from objectrl.config.config import MainConfig
-
-
-class PACBayesLoss(ProbabilisticLoss):
-    """
-    Implements PAC-Bayesian loss for critic training using uncertainty-aware estimates.
-
-    Args:
-        config (MainConfig): Configuration object containing model settings.
-
-    Computes a PAC-Bayes bound-based Q-learning loss that penalizes uncertainty
-    and uses bootstrapping for improved generalization.
-    """
-
-    def __init__(self, config: "MainConfig"):
-        super().__init__()
-        self.prior_variance = config.model.lossparams.prior_variance
-        self.bootstrap_rate = config.model.lossparams.bootstrap_rate
-        self.gamma = config.model.gamma
-        self.sig2_lowerclamp = config.model.sig2_lowerclamp
-
-    def forward(
-        self, q: torch.Tensor, y: torch.Tensor, weights: torch.Tensor | None = None
-    ) -> torch.Tensor:
-        """
-        Computes the PAC-Bayes loss between predicted Q-values and targets.
-
-        Args:
-            q (Tensor): Predicted Q-values (ensemble shape: [ensemble, batch]).
-            y (Tensor): Target Q-values (shape: [ensemble, batch]).
-            weights (Tensor, optional): Sample weights (unused here).
-
-        Returns:
-            Tensor: Loss scalar.
-        """
-        mu_0 = y.mean(dim=0)
-        sig2_0 = self.prior_variance
-
-        bootstrap_mask = (torch.rand_like(q) >= self.bootstrap_rate) * 1.0
-        sig2 = (q * bootstrap_mask).var(dim=0).clamp(self.sig2_lowerclamp, None)
-        logsig2 = sig2.log()
-
-        err_0 = (q - mu_0) * bootstrap_mask
-        term1 = -0.5 * logsig2
-        term2 = 0.5 * (err_0.pow(2)).mean(dim=0) / sig2_0
-        kl_term = term1 + term2
-
-        var_offset = -self.gamma**2 * logsig2
-        emp_loss = ((q - y) * bootstrap_mask).pow(2)
-        q_loss = emp_loss + kl_term + var_offset
-
-        return self._apply_reduction(q_loss)
 
 
 class PBACActor(SACActor):
@@ -160,8 +108,6 @@ class PBACCritic(CriticEnsemble):
         dim_act: int,
     ) -> None:
         super().__init__(config, dim_state, dim_act)
-        self.loss = PACBayesLoss(config)
-        self.gamma = config.model.gamma
 
     @torch.no_grad()
     def get_bellman_target(
@@ -187,7 +133,7 @@ class PBACCritic(CriticEnsemble):
         next_action, ep = action_dict["action"], action_dict["action_logprob"]
         qp_ = self.Q_t(next_state, next_action)
         qp_t = qp_ - alpha * (ep if ep is not None else 0)
-        y = reward.unsqueeze(-1) + (self.gamma * qp_t * (1 - done.unsqueeze(-1)))
+        y = reward.unsqueeze(-1) + (self._gamma * qp_t * (1 - done.unsqueeze(-1)))
         return y
 
     @torch.no_grad()
