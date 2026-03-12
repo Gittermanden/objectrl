@@ -78,59 +78,109 @@ class ProbabilisticLoss(_Loss, ABC):
             raise ValueError(f"Unknown reduction: {self.reduction}")
 
 
+# class PACBayesLoss(ProbabilisticLoss):
+#     """
+#     PAC-Bayesian loss combining empirical risk and complexity term.
+
+#     Args:
+#         config: Configuration object with loss parameters:
+#         - lossparams.reduction (str): Reduction method.
+#         - lossparams.logvar_lower_clamp (float): Lower clamp for log variance.
+#         - lossparams.logvar_upper_clamp (float): Upper clamp for log variance.
+#         - lossparams.complexity_coef (float): Coefficient for complexity term.
+#     Attributes:
+#         logvar_lower_clamp (float): Lower clamp for log variance.
+#         logvar_upper_clamp (float): Upper clamp for log variance.
+#         complexity_coef (float): Coefficient for complexity term.
+#     """
+
+#     def __init__(self, config: "PBACConfig"):
+#         """
+#         Initialize PACBayesLoss with configuration parameters.
+#         """
+#         super().__init__(reduction=config.lossparams.reduction)
+#         self.logvar_lower_clamp = config.lossparams.logvar_lower_clamp
+#         self.logvar_upper_clamp = config.lossparams.logvar_upper_clamp
+#         self.complexity_coef = config.lossparams.complexity_coef
+
+#     def forward(self, mu_lvar_dict: dict, y: torch.Tensor) -> torch.Tensor:
+#         """
+#         Compute the PAC-Bayes loss.
+
+#         Args:
+#             mu_lvar_dict (dict): Dictionary with keys "mu" (mean) and "lvar" (log variance) tensors.
+#             y (Tensor): Target tensor with shape [..., 2], where last dimension holds
+#             true mean and true variance (mu_t, sig2_t).
+#         Returns:
+#             Tensor: Computed PAC-Bayes loss.
+#         """
+#         mu_t = y[:, :, 0]
+#         sig2_t = y[:, :, 1]
+#         mu, logvar = mu_lvar_dict["mu"], mu_lvar_dict["lvar"]
+#         sig2 = logvar.exp().clamp(self.logvar_lower_clamp, self.logvar_upper_clamp)
+
+#         # KL divergence term between predicted and true distributions
+#         sig_ratio = sig2 / sig2_t
+#         kl_vals = 0.5 * (sig_ratio - sig_ratio.log() + (mu - mu_t) ** 2 / sig2_t - 1)
+
+#         # Empirical risk (expected squared error plus predicted variance)
+#         empirical_risk = ((mu - mu_t) ** 2 + sig2).mean(-1)
+
+#         # Complexity regularization scaled by coefficient
+#         complexity = kl_vals.mean(-1) * self.complexity_coef
+
+#         q_loss = empirical_risk + complexity
+#         return q_loss.sum()
+
+
 class PACBayesLoss(ProbabilisticLoss):
     """
-    PAC-Bayesian loss combining empirical risk and complexity term.
-
-    Args:
-        config: Configuration object with loss parameters:
-        - lossparams.reduction (str): Reduction method.
-        - lossparams.logvar_lower_clamp (float): Lower clamp for log variance.
-        - lossparams.logvar_upper_clamp (float): Upper clamp for log variance.
-        - lossparams.complexity_coef (float): Coefficient for complexity term.
-    Attributes:
-        logvar_lower_clamp (float): Lower clamp for log variance.
-        logvar_upper_clamp (float): Upper clamp for log variance.
-        complexity_coef (float): Coefficient for complexity term.
+    Implements PAC-Bayesian loss for critic training using uncertainty-aware estimates.
+    Computes a PAC-Bayes bound-based Q-learning loss that penalizes uncertainty
+    and uses bootstrapping for improved generalization.
     """
 
     def __init__(self, config: "PBACConfig"):
         """
-        Initialize PACBayesLoss with configuration parameters.
+        Args:
+            config (PBACConfig): Configuration object containing model settings.
         """
         super().__init__(reduction=config.lossparams.reduction)
-        self.logvar_lower_clamp = config.lossparams.logvar_lower_clamp
-        self.logvar_upper_clamp = config.lossparams.logvar_upper_clamp
-        self.complexity_coef = config.lossparams.complexity_coef
+        self.prior_variance = config.lossparams.prior_variance
+        self.bootstrap_rate = config.lossparams.bootstrap_rate
+        self.gamma = config.lossparams.gamma
+        self.sig2_lower_clamp = config.lossparams.sig2_lower_clamp
 
-    def forward(self, mu_lvar_dict: dict, y: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, q: torch.Tensor, y: torch.Tensor, weights: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """
-        Compute the PAC-Bayes loss.
+        Computes the PAC-Bayes loss between predicted Q-values and targets.
 
         Args:
-            mu_lvar_dict (dict): Dictionary with keys "mu" (mean) and "lvar" (log variance) tensors.
-            y (Tensor): Target tensor with shape [..., 2], where last dimension holds
-            true mean and true variance (mu_t, sig2_t).
+            q (Tensor): Predicted Q-values (ensemble shape: [ensemble, batch]).
+            y (Tensor): Target Q-values (shape: [ensemble, batch]).
+            weights (Tensor, optional): Sample weights (unused here).
         Returns:
-            Tensor: Computed PAC-Bayes loss.
+            Tensor: Loss scalar.
         """
-        mu_t = y[:, :, 0]
-        sig2_t = y[:, :, 1]
-        mu, logvar = mu_lvar_dict["mu"], mu_lvar_dict["lvar"]
-        sig2 = logvar.exp().clamp(self.logvar_lower_clamp, self.logvar_upper_clamp)
+        mu_0 = y.mean(dim=0)
+        sig2_0 = self.prior_variance
 
-        # KL divergence term between predicted and true distributions
-        sig_ratio = sig2 / sig2_t
-        kl_vals = 0.5 * (sig_ratio - sig_ratio.log() + (mu - mu_t) ** 2 / sig2_t - 1)
+        bootstrap_mask = (torch.rand_like(q) >= self.bootstrap_rate) * 1.0
+        sig2 = (q * bootstrap_mask).var(dim=0).clamp(self.sig2_lower_clamp, None)
+        logsig2 = sig2.log()
 
-        # Empirical risk (expected squared error plus predicted variance)
-        empirical_risk = ((mu - mu_t) ** 2 + sig2).mean(-1)
+        err_0 = (q - mu_0) * bootstrap_mask
+        term1 = -0.5 * logsig2
+        term2 = 0.5 * (err_0.pow(2)).mean(dim=0) / sig2_0
+        kl_term = term1 + term2
 
-        # Complexity regularization scaled by coefficient
-        complexity = kl_vals.mean(-1) * self.complexity_coef
+        var_offset = -self.gamma**2 * logsig2
+        emp_loss = ((q - y) * bootstrap_mask).pow(2)
+        q_loss = emp_loss + kl_term + var_offset
 
-        q_loss = empirical_risk + complexity
-        return q_loss.sum()
+        return self._apply_reduction(q_loss)
 
 
 class DSACLoss(_Loss):

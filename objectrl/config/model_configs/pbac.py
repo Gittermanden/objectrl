@@ -36,6 +36,8 @@ class CriticLossConfig:
         bootstrap_rate (float): Rate for masking samples during loss computation.
         logvar_lower_clamp (float): Minimum value to clamp log variance to.
         logvar_upper_clamp (float): Maximum value to clamp log variance to.
+        gamma (float): Discount factor for Bellman target.
+        sig2_lowerclamp (float): Minimum variance to avoid division by zero.
         reduction (Literal): Type of loss reduction ('mean', 'sum', or 'none').
     """
 
@@ -44,6 +46,8 @@ class CriticLossConfig:
     bootstrap_rate: float = 0.05
     logvar_lower_clamp: float = 0.01
     logvar_upper_clamp: float = 100.0
+    gamma: float = 0.99
+    sig2_lower_clamp: float = 1e-6
     reduction: Literal["mean", "sum", "none"] = "mean"
 
 
@@ -95,8 +99,6 @@ class PBACConfig:
         tau (float): Polyak averaging coefficient for target updates.
         posterior_sampling_rate (int): Frequency to resample actor ensemble index.
         alpha (float): Entropy temperature.
-        gamma (float): Discount factor for Bellman target.
-        sig2_lowerclamp (float): Minimum variance to avoid division by zero.
         actor (PBACActorConfig): Actor configuration.
         critic (PBACCriticConfig): Critic configuration.
     """
@@ -109,8 +111,6 @@ class PBACConfig:
     tau: float = 0.005
     posterior_sampling_rate: int = 5
     alpha: float = 1.0
-    gamma: float = 0.99
-    sig2_lowerclamp: float = 1e-6
 
     actor: PBACActorConfig = field(default_factory=PBACActorConfig)
     critic: PBACCriticConfig = field(default_factory=PBACCriticConfig)

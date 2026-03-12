@@ -47,13 +47,6 @@ UML Diagram
 Classes
 -------
 
-.. autoclass:: objectrl.models.pbac.PACBayesLoss
-    :undoc-members:
-    :show-inheritance:
-    :private-members:
-    :members:
-    :exclude-members: _abc_impl
-
 .. autoclass:: objectrl.models.pbac.PBACActor
     :undoc-members:
     :show-inheritance:
