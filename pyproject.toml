@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "objectrl"
 version = "0.2.0"
 description = "ObjectRL: An Object-Oriented Reinforcement Learning Codebase"
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 authors = [
     { name = "Abdullah Akgul", email = "akgul@imada.sdu.dk" },
     { name = "Bahareh Tasdighi", email = "tasdighi@imada.sdu.dk" },
