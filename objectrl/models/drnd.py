@@ -178,7 +178,7 @@ class DRNDActor(SACActor):
         """
         loss, act_dict = super().loss(state, critics)
         bonus = bonus_ensemble.bonus(state, act_dict["action"]).mean()
-        return loss + bonus, act_dict
+        return loss + self.lambda_actor * bonus, act_dict
 
     def update(
         self, state: torch.Tensor, critics: "DRNDCritics", bonus_ensemble: DRNDBonus
