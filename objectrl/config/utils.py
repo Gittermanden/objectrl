@@ -241,7 +241,7 @@ def get_cli_tyro(argv: list[str], config: type) -> dict[str, Any]:
     # Fix arguments. This will modify all option-style arguments replacing
     # underscores with hyphens, or vice versa if use_underscores=True.
     modified_args: dict[str, str] = {}
-    # with tyro._strings.delimeter_context("_"):
+    # with tyro._strings.delimiter_context("_"):
     if True:
         for index, arg in enumerate(args):
             if not arg.startswith("--"):
@@ -249,9 +249,9 @@ def get_cli_tyro(argv: list[str], config: type) -> dict[str, Any]:
 
             if "=" in arg:
                 arg, _, val = arg.partition("=")
-                fixed = "--" + tyro._strings.swap_delimeters(arg[2:]) + "=" + val  # type: ignore
+                fixed = "--" + tyro._strings.swap_delimiters(arg[2:]) + "=" + val  # type: ignore
             else:
-                fixed = "--" + tyro._strings.swap_delimeters(arg[2:])  # type: ignore
+                fixed = "--" + tyro._strings.swap_delimiters(arg[2:])  # type: ignore
             modified_args[fixed] = arg
             args[index] = fixed
 
