@@ -178,7 +178,7 @@ class DRNDActor(SACActor):
         """
         loss, act_dict = super().loss(state, critics)
         bonus = bonus_ensemble.bonus(state, act_dict["action"]).mean()
-        return loss + bonus, act_dict
+        return loss + self.lambda_actor * bonus, act_dict
 
     def update(
         self, state: torch.Tensor, critics: "DRNDCritics", bonus_ensemble: DRNDBonus
@@ -265,16 +265,17 @@ class DRNDCritics(CriticEnsemble):
 # [end-critic-code]
 
 
-# # [start-drnd-code]
+# [start-drnd-code]
 class DRND(ActorCritic):
     """
     DRND agent integrating exploration through Distributional Random Network Distillation.
-    Yang et al. (2024): Exploration and Anti-Exploration with Distributional Random Network Distillation
 
     Implements actor-critic logic where:
     - Actor loss is regularized by an exploration bonus
     - Critic targets include bonus penalties
     - Bonus predictor is trained online
+
+    Yang et al. (2024): Exploration and Anti-Exploration with Distributional Random Network Distillation
     """
 
     _agent_name = "DRND"
@@ -286,6 +287,16 @@ class DRND(ActorCritic):
         actor_type: type = DRNDActor,
         bonus_type: type = DRNDBonus,
     ) -> None:
+        """
+        Initializes DRND agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         super().__init__(config, critic_type, actor_type)
 
         self.bonus_ensemble = bonus_type(config, self.dim_state, self.dim_act)

@@ -229,11 +229,7 @@ class PPOCritic(CriticEnsemble):
 class ProximalPolicyOptimization(ActorCritic):
     """
     PPO agent that handles actor-critic updates, GAE estimation and learning.
-
-    Args:
-        config (MainConfig): Main configuration.
-        critic_type (type): Critic class (default: PPOCritic).
-        actor_type (type): Actor class (default: PPOActor).
+    Schulman et al. (2017): Proximal Policy Optimization Algorithms
     """
 
     _agent_name = "PPO"
@@ -243,7 +239,17 @@ class ProximalPolicyOptimization(ActorCritic):
         config: "MainConfig",
         critic_type: type = PPOCritic,
         actor_type: type = PPOActor,
-    ):
+    ) -> None:
+        """
+        Initializes the PPO agent.
+
+        Args:
+            config (MainConfig): Configuration dataclass instance.
+            critic_type (type): Critic class type.
+            actor_type (type): Actor class type.
+        Returns:
+            None
+        """
         assert config.training.warmup_steps == 0, "PPO does not support warmup steps"
         assert not (
             config.model.normalize_advantages and config.training.learn_frequency == 1

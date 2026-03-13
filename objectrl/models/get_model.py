@@ -20,6 +20,7 @@ from objectrl.models.bnnsac import BNNSoftActorCritic
 from objectrl.models.ddpg import DeepDeterministicPolicyGradient
 from objectrl.models.dqn import DQN
 from objectrl.models.drnd import DRND
+from objectrl.models.dsac import DistributionalSoftActorCritic
 from objectrl.models.oac import OptimisticActorCritic
 from objectrl.models.pbac import PACBayesianAC
 from objectrl.models.ppo import ProximalPolicyOptimization
@@ -56,6 +57,10 @@ def get_model(config) -> object:  # noqa: C901
             return DQN(config, critic.critic_type)
         case "drnd":
             return DRND(config, critic.critic_type, actor.actor_type)
+        case "dsac":
+            return DistributionalSoftActorCritic(
+                config, critic.critic_type, actor.actor_type
+            )
         case "oac":
             return OptimisticActorCritic(config, critic.critic_type, actor.actor_type)
         case "pbac":
