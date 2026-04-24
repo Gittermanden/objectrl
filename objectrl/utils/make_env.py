@@ -19,7 +19,7 @@
 import gymnasium as gym
 import numpy as np
 import torch
-from gymnasium.wrappers import FlattenObservation, RescaleAction, ResizeObservation, GrayscaleObservation
+from gymnasium.wrappers import FlattenObservation, RescaleAction, ResizeObservation, GrayscaleObservation, FrameStackObservation
 
 from objectrl.utils.environment.dmc_wrappers import DMCEnv
 from objectrl.utils.environment.metaworld_wrappers import SparsifyRewardWrapper
@@ -139,8 +139,10 @@ def make_env(  # noqa: C901
         elif env_name in gymnasium_mappings.values():
             env = gym.make(env_name, continuous=True)
             if env_config.flatten_observations:
+
                 env = ResizeObservation(env, (32, 32))
                 env = GrayscaleObservation(env, keep_dim=False)
+                env = FrameStackObservation(env, 4)
                 env = FlattenObservation(env)
 
         else:
