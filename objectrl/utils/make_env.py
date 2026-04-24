@@ -19,7 +19,7 @@
 import gymnasium as gym
 import numpy as np
 import torch
-from gymnasium.wrappers import FlattenObservation, RescaleAction
+from gymnasium.wrappers import FlattenObservation, RescaleAction, ResizeObservation, GrayscaleObservation
 
 from objectrl.utils.environment.dmc_wrappers import DMCEnv
 from objectrl.utils.environment.metaworld_wrappers import SparsifyRewardWrapper
@@ -46,6 +46,8 @@ dmc_mappings = {
     "dmc-cheetah-run": "dmc-cheetah-run",
     "dmc-hopper-hop": "dmc-hopper-hop",
     "dmc-walker-run": "dmc-walker-run",
+    "dmc-cartpole-swingup": "dmc-cartpole-swingup",
+    "dmc-acrobot-swingup": "dmc-acrobot-swingup",
 }
 
 metaworld_mappings = {
@@ -56,6 +58,9 @@ metaworld_mappings = {
     "metaworld-reach": "reach-v3",
     "metaworld-button-press-topdown": "button-press-topdown-v3",
     "metaworld-door-open": "door-open-v3",
+}
+gymnasium_mappings = {
+    "CarRacing-v3": "CarRacing-v3",
 }
 
 env_mappings = {
@@ -131,6 +136,13 @@ def make_env(  # noqa: C901
             env = gym.make("Meta-World/MT1", env_name=env_name, seed=seed)
             if env_config.sparse_rewards:
                 env = SparsifyRewardWrapper(env)
+        elif env_name in gymnasium_mappings.values():
+            env = gym.make(env_name, continuous=True)
+            if env_config.flatten_observations:
+                env = ResizeObservation(env, (32, 32))
+                env = GrayscaleObservation(env, keep_dim=False)
+                env = FlattenObservation(env)
+
         else:
             raise gym.error.Error(f"Environment '{env_name}' not found.")
 

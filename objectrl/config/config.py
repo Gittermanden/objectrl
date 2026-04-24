@@ -81,6 +81,7 @@ class EnvConfig:
         position_delay (float | None): Optional delay in position updates.
         control_cost_weight (float | ): Optional weight for control cost penalty.
         sparse_rewards (bool): Whether to use sparse rewards.
+        flatten_observations (bool): Flattening the observation space into a into a single value.
     """
 
     name: (
@@ -98,6 +99,8 @@ class EnvConfig:
             "dmc-cheetah-run",
             "dmc-hopper-hop",
             "dmc-walker-run",
+            "dmc-cartpole-swingup",
+            "dmc-acrobot-swingup",
             "metaworld-window-close",
             "metaworld-window-open",
             "metaworld-drawer-close",
@@ -105,6 +108,7 @@ class EnvConfig:
             "metaworld-reach",
             "metaworld-button-press-topdown",
             "metaworld-door-open",
+            "CarRacing-v3",
         ]
         | str
     ) = "cheetah"
@@ -112,6 +116,7 @@ class EnvConfig:
     position_delay: float | None = None
     control_cost_weight: float | None = None
     sparse_rewards: bool = False
+    flatten_observations: bool = False
 
 
 # [end-env-config]
@@ -333,6 +338,8 @@ class HarvestConfig:
             "dmc-cheetah-run",
             "dmc-hopper-hop",
             "dmc-walker-run",
+            "dmc-cartpole-swingup",
+            "dmc-acrobot-swingup",
             "metaworld-window-close",
             "metaworld-window-open",
             "metaworld-drawer-close",
@@ -340,6 +347,7 @@ class HarvestConfig:
             "metaworld-reach",
             "metaworld-button-press-topdown",
             "metaworld-door-open",
+            "CarRacing-v3",
         ]
     ] = field(default_factory=lambda: ["cheetah"])
 

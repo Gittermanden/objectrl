@@ -132,8 +132,8 @@ class DMCEnv(core.Env):
             TimeStep: A Gymnasium-style tuple:
                 (observation, reward, terminated, truncated, info)
         """
+        action = np.clip(action, self.action_space.low, self.action_space.high)
         assert self.action_space.contains(action), "Action not in action_space."
-
         time_step = self._env.step(action)
         reward: float = time_step.reward or 0.0
         done: bool = time_step.last()
